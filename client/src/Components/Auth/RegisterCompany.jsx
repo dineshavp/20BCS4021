@@ -13,30 +13,49 @@ import {
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { VisibilityOff, Visibility, } from "@mui/icons-material";
 import { useForm } from "react-hook-form";
-// import axiosService from '../../axios';
+import axiosService from "../../axios";
 
 
 export default function RegisterCompany() {
-  const [showPass, setshowPass] = useState(false);
-  const [rememberStatus, setrememberStatus] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [sending, setSending] = useState(false);
 
   const navigate = useNavigate();
+
+
   const form = useForm({
     defaultValues: {
       companyName: "",
       ownerName: "",
       rollNo: '',
       ownerEmail: "",
-      accessCode: ""
+      accessCode: Math.random().toString(36).slice(2)
     },
   });
-  const { register, handleSubmit, formState } = form;
+  const { register, handleSubmit, formState, getValues } = form;
   const { errors } = formState;
   const onSubmit = async (data) => {
-    console.log(data);
-    console.log("submit");
+    try {
+      const response = await axiosService.post('/train/register', data)
+      if(response){
+        const responseData = response.data
+        data.clientSecret = responseData.clientSecret
+        const localData = JSON.stringify(responseData)
+        localStorage.setItem('userData', localData)
+        const Token = await axiosService.post(
+          "/train/auth",
+          data
+        )
+        if(Token){
+          console.log(Token);
+          localStorage.setItem("accessToken", Token.data.access_token)
+        }
+
+      }
+    } catch (error) {
+      setErrorMessage(error.message)
+    }
+
   };
   const isAccessTokenPresent = localStorage.getItem("accesstoken");
   if (isAccessTokenPresent) {
@@ -119,10 +138,23 @@ export default function RegisterCompany() {
               label="Email"
               autoComplete="email"
               {...register("ownerEmail", {
-                required: "Roll No is required",
+                required: "Email is required",
               })}
-              error={!!errors.rollNo}
-              helperText={errors.rollNo?.message}
+              error={!!errors.ownerEmail}
+              helperText={errors.ownerEmail?.message}
+            />
+            <TextField
+              margin="normal"
+              fullWidth
+              type="text"
+              label="Access Code"
+              disabled
+              autoComplete="accessCode"
+              {...register("accessCode", {
+                required: "Access Code is required",
+              })}
+              error={!!errors.accessCode}
+              helperText={errors.accessCode?.message}
             />
             <Typography color="#d91818" textAlign="center" fontWeight={300}>
               {errorMessage}
@@ -146,16 +178,6 @@ export default function RegisterCompany() {
                 "Sign in"
               )}
             </Button>
-            <Grid container>
-              <Grid item xs textAlign="center">
-                <Link
-                  to="/forgotpassword"
-                  style={{ textDecoration: "none", color: "#418ff4" }}
-                >
-                  Forgot password?
-                </Link>
-              </Grid>
-            </Grid>
           </form>
         </Box>
       </Grid>
