@@ -1,12 +1,10 @@
-const express = require('express')
-const app = express()
-const port = 4000
+import express from "express";
+import { trainRouter } from "./router/train.js";
+import cors from "cors";
 
-app.get('/numbers', (req, res)=>{
-    console.log(req.query);
-})
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use("/train", trainRouter);
 
-
-app.listen(port, ()=>{
-    console.log(`server is running on ${port}`);
-})
+app.listen("5000", () => console.log("Server is running in port 5000"));
